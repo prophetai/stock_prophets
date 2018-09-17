@@ -47,14 +47,22 @@ def download_data(conn, query):
     Returns:
         df (DataFrame): Tabla con los datos que elegimos
     """
+    sql_commands = ['create', 'insert', 'update']
+    df = "empty"
     try:
         cursor = conn.cursor()
         cursor.execute(query)
-        data_sql = cursor.fetchall()
+        if 'select' in query.lower():
+            data_sql = cursor.fetchall()
+            df = pd.DataFrame(data_sql) # Ponemos datos en DataFrame
         conn.commit()
+    except Exception as error:
+        logging.error(error)
+    except psycopg2.ProgrammingError as error:
+        df = str(error)
+        print(error)
     finally:
         conn.close()
 
-    df = pd.DataFrame(data_sql) # Ponemos datos en DataFrame
 
     return df
