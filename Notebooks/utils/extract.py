@@ -52,17 +52,17 @@ def download_data(conn, query):
     try:
         cursor = conn.cursor()
         cursor.execute(query)
-        if 'select' in query.lower():
+        if query.lower().startswith('select'):
             data_sql = cursor.fetchall()
             df = pd.DataFrame(data_sql) # Ponemos datos en DataFrame
         conn.commit()
     except Exception as error:
+        logging.error('Error en download data')
         logging.error(error)
     except psycopg2.ProgrammingError as error:
         df = str(error)
         print(error)
     finally:
         conn.close()
-
 
     return df
