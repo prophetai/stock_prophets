@@ -1,7 +1,6 @@
 #-*- coding: utf-8 -*-
 import logging
 from pandas_datareader import data
-import matplotlib.pyplot as plt
 import pandas as pd
 import datetime
 from utils.extract import db_connection, download_data
