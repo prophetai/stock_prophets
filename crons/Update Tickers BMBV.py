@@ -62,6 +62,7 @@ def update_in_db(df, table_name, creds):
 
     conn = db_connection(creds)
     matrix = np.array(df.to_records().view(type=np.matrix))[0]
+
     data = []
 
     for i in range(len(matrix)):
@@ -76,13 +77,14 @@ def update_in_db(df, table_name, creds):
         prices = "(" + date + ", " + High + ", " + Low + ", " + Open + ", " + Close + ", " + Volume + "," + Adj_Clos +")"
         data.append(prices)
 
+    print(data)
     data = str(data).replace("[", "(").replace("]", ")").replace('(', '', 1)[:-1].replace('"','')
     table_name = table_name.replace('-','_')
-    query = """INSERT INTO {} (date, high, low, open, close, volume, adj_close) VALUES{} ON CONFLICT ON CONSTRAINT {}_date_key DO NOTHING;""".format(table_name.upper(), data, table_name.lower())
+    query = """INSERT INTO {} (date, high, low, open, close, volume, adj_close) VALUES {} ON CONFLICT ON CONSTRAINT {}_date_key DO NOTHING;""".format(table_name.upper(), data, table_name.lower())
 
     try:
         download_data(conn, query)
-        logging.info("Se guardó: {}".format(ticker))
+        logging.info("Se guardó: {}".format(table_name))
     except Exception as error:
         logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
 
@@ -109,7 +111,7 @@ def get_stock_data(lista_tickers, creds, previous_date=False):
             start_date = end_date
 
         try:
-            panel_data = data.DataReader(ticker, 'yahoo', '2018-09-30', '2018-09-30')[:-1]
+            panel_data = data.DataReader(ticker, 'yahoo', start_date, end_date)
             table_name = ticker.replace('.','_').replace('-','_')
             create_new_stock_table(table_name, creds)
             update_in_db(panel_data, table_name, creds)
