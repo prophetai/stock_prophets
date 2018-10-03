@@ -6,13 +6,20 @@ import datetime
 from utils.extract import db_connection, download_data
 import json
 import numpy as np
+import google.cloud.logging
 
+# Instancia un cliente para el logger
+client = google.cloud.logging.Client()
+
+# Connects the logger to the root logging handler; by default this captures
+# all logs at INFO level and higher
+client.setup_logging()
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
     level=logging.DEBUG,
-    #filename='log.txt'
+    filename='log.txt'
 )
 
 lista_tickers = pd.read_csv('tickers.csv')[['Ticker']]
@@ -59,8 +66,6 @@ def create_new_stock_table(table_name, creds):
     download_data(conn, query)
 
 def update_in_db(df, table_name, creds):
-
-    conn = db_connection(creds)
     matrix = np.array(df.to_records().view(type=np.matrix))[0]
 
     data = []
@@ -77,19 +82,28 @@ def update_in_db(df, table_name, creds):
         prices = "(" + date + ", " + High + ", " + Low + ", " + Open + ", " + Close + ", " + Volume + "," + Adj_Clos +")"
         data.append(prices)
 
-    print(data)
-    data = str(data).replace("[", "(").replace("]", ")").replace('(', '', 1)[:-1].replace('"','')
-    table_name = table_name.replace('-','_')
-    query = """INSERT INTO {} (date, high, low, open, close, volume, adj_close) VALUES {} ON CONFLICT ON CONSTRAINT {}_date_key DO NOTHING;""".format(table_name.upper(), data, table_name.lower())
+        print(data)
+        data = str(data).replace("[", "(").replace("]", ")").replace('(', '', 1)[:-1].replace('"','')
+        table_name = table_name.replace('-','_')
+        query = """INSERT INTO {} (date, high, low, open, close, volume, adj_close) VALUES {} ON CONFLICT ON CONSTRAINT {}_date_key DO NOTHING;""".format(table_name.upper(), data, table_name.lower())
 
-    try:
-        download_data(conn, query)
-        logging.info("Se guardó: {}".format(table_name))
-    except Exception as error:
-        logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
+        if i % 10000 == 0:
+            try:
+                conn = db_connection(creds)
+                download_data(conn, query)
+                data = []
+                logging.info("Se guardó: {}".format(table_name))
+            except Exception as error:
+                logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
+        elif i == len(matrix)-1:
+            try:
+                conn = db_connection(creds)
+                download_data(conn, query)
+                logging.info("Se guardó: {}".format(table_name))
+            except Exception as error:
+                logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
 
 
-# In[103]:
 
 
 # User pandas_reader.data.DataReader to load the desired data. As simple as that.
