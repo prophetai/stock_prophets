@@ -9,7 +9,21 @@ import logging
 import twint
 import datetime
 from utils.extract import db_connection, download_data
+import google.cloud.logging
 
+# Instancia un cliente para el logger
+client = google.cloud.logging.Client()
+
+# Connects the logger to the root logging handler; by default this captures
+# all logs at INFO level and higher
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p',
+    level=logging.DEBUG,
+    #filename='log.txt'
+)
+
+client.setup_logging()
 
 def search_tweets(cuenta):
     """
@@ -42,7 +56,6 @@ def load_tweets(DF, creds):
         df(Dataframe): DataFrame con datos a subir a la base de datos
         creds(dict): Diccionario con las credenciales de la base de datos
     """
-    conn = db_connection(creds)
     df = DF.copy()
 
     new_order = ['id', 'user_id', 'date', 'timezone', 'location', 'username', 'tweet', 'hashtags', 'link', 'retweet', 'user_rt', 'mentions']
@@ -52,11 +65,10 @@ def load_tweets(DF, creds):
     date_time = str(datetime.datetime.now())
 
     lista_tweets = df.values.tolist()
-    #lista_tweets = [str(tweet) for element in tweet for tweet in lista_tweets ]
 
     data_ready = ''
 
-    for tweet in lista_tweets:
+    for tweet, i in enumerate(lista_tweets, start=0):
         tweet_str = []
         for element in tweet:
             print("element: %s" % (element))
@@ -67,17 +79,25 @@ def load_tweets(DF, creds):
             tweet_str.append(transform)
 
         data_ready += "(" + str(tweet_str)[1:-1] + ")"
+        query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
 
-    data_ready = data_ready.replace(")(",'), (')
-    print('Se van a guardar {}'.format(data_ready))
-
-
-    query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
-
-    #try:
-    download_data(conn,query)
-    #except Exception as e:
-    #    logging.error('Error al insertar en la base: %s' % (e))
+        if i % 10000 == 0 and data != []:
+            try:
+                data_ready = data_ready.replace(")(",'), (')
+                conn = db_connection(creds)
+                download_data(conn, query)
+                data_ready = ''
+                logging.info("Se guardaron tweets ({}-{}) de la cuenta: {}".format(i-10000,len(lista_tweets-1),table_name))
+            except Exception as error:
+                logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
+        elif i == len(lista_tweets)-1 and data != []:
+            try:
+                data_ready = data_ready.replace(")(",'), (')
+                conn = db_connection(creds)
+                download_data(conn, query)
+                logging.info("Se guardaron los últimos tweets ({}-{}) de la cuenta: {}".format(i - len(lista_tweets-1),len(lista_tweets-1),table_name))
+            except Exception as error:
+                logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
 
 def main():
     """
@@ -92,10 +112,10 @@ def main():
     for cuenta in lista_cuentas:
         df = search_tweets(cuenta)
 
-        #try:
-        load_tweets(df, creds)
-        #except Exception as e:
-        #    logging.error('Error al insertar en la base %s' % (e))
+        try:
+            load_tweets(df, creds)
+        except Exception as e:
+            logging.error('Error al insertar en la base %s' % (e))
 
 if __name__ == "__main__":
     version = ".".join(str(v) for v in sys.version_info[:2])
