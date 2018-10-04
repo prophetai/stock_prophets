@@ -114,6 +114,8 @@ def main():
 
         try:
             load_tweets(df, creds)
+            twint.storage.panda.Tweets_df = ''
+            del df
         except Exception as e:
             logging.error('Error al insertar en la base %s' % (e))
 
