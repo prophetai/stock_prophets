@@ -12,7 +12,7 @@ from utils.extract import db_connection, download_data
 import google.cloud.logging
 
 # Instancia un cliente para el logger
-client = google.cloud.logging.Client()
+#client = google.cloud.logging.Client()
 
 # Connects the logger to the root logging handler; by default this captures
 # all logs at INFO level and higher
@@ -23,7 +23,7 @@ logging.basicConfig(
     #filename='log.txt'
 )
 
-client.setup_logging()
+#client.setup_logging()
 
 def search_tweets(cuenta):
     """
@@ -38,7 +38,7 @@ def search_tweets(cuenta):
     c = twint.Config()
     c.Username = cuenta.replace('@','')
     c.Pandas = True
-    #c.Limit = 10
+
     try:
         twint.run.Search(c)
     except asyncio.TimeoutError as error:
@@ -68,36 +68,36 @@ def load_tweets(DF, creds):
 
     data_ready = ''
 
-    for tweet, i in enumerate(lista_tweets, start=0):
+    for i, tweet in enumerate(lista_tweets, start=0):
         tweet_str = []
         for element in tweet:
-            print("element: %s" % (element))
             element = str(element).replace("'", '')
             transform = "" + str(element).replace("['", '[').replace("']",']')
-            #transform = transform.replace('"[#',"'[#")
-            print("transform: %s" % (transform))
             tweet_str.append(transform)
 
         data_ready += "(" + str(tweet_str)[1:-1] + ")"
-        query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
 
-        if i % 10000 == 0 and data != []:
+        if i % 10000 == 0 and data_ready != [] and i > 0:
             try:
+                logging.info("Se llega a un número de tweet que es modulo 10K!!!!!!!!!!!!!")
                 data_ready = data_ready.replace(")(",'), (')
+                query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
                 conn = db_connection(creds)
                 download_data(conn, query)
                 data_ready = ''
-                logging.info("Se guardaron tweets ({}-{}) de la cuenta: {}".format(i-10000,len(lista_tweets-1),table_name))
+                logging.info("Se guardaron tweets ({}-{})".format(i-10000,len(lista_tweets)))
             except Exception as error:
-                logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
-        elif i == len(lista_tweets)-1 and data != []:
+                logging.error("Error al tratar de insertar: %s" % (error))
+        elif i == len(lista_tweets)-1 and data_ready != []:
             try:
+                logging.info("Se llega a un número de tweet que NO es modulo 10K!!!!!!!!!!!!!")
                 data_ready = data_ready.replace(")(",'), (')
+                query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
                 conn = db_connection(creds)
                 download_data(conn, query)
-                logging.info("Se guardaron los últimos tweets ({}-{}) de la cuenta: {}".format(i - len(lista_tweets-1),len(lista_tweets-1),table_name))
+                logging.info("Se guardaron los últimos tweets ({}-{})".format(i - len(lista_tweets) + 1,len(lista_tweets)))
             except Exception as error:
-                logging.error("Error al tratar de insertar %s: %s" % (table_name,error))
+                logging.error("Error al tratar de insertar: %s" % (error))
 
 def main():
     """
