@@ -1,13 +1,15 @@
 #-*- coding: utf-8 -*-
+import os, sys
+from os.path import dirname, join, abspath
 import logging
 from pandas_datareader import data
 import pandas as pd
 import datetime
-from utils.extract import db_connection, download_data
 import json
 import numpy as np
 import google.cloud.logging
-
+sys.path.insert(0, abspath(join(dirname(__file__), '..')))
+from utils.extract import db_connection, download_data
 # Instancia un cliente para el logger
 client = google.cloud.logging.Client()
 
