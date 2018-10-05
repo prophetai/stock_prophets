@@ -8,7 +8,7 @@ import datetime
 import json
 import numpy as np
 import google.cloud.logging
-sys.path.insert(0, abspath(join(dirname(__file__), '..')))
+sys.path.insert(0, '..')
 from utils.extract import db_connection, download_data
 # Instancia un cliente para el logger
 client = google.cloud.logging.Client()

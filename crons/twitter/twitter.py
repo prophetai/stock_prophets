@@ -8,6 +8,7 @@ import pandas as pd
 import logging
 import twint
 import datetime
+sys.path.insert(0, '..')
 from utils.extract import db_connection, download_data
 import google.cloud.logging
 
