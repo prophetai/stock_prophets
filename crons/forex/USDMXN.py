@@ -19,6 +19,9 @@ client = google.cloud.logging.Client()
 # all logs at INFO level and higher
 client.setup_logging()
 
+#Inicializamos el api de Oanda
+oanda = opy.API(environment='live')
+
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%m/%d/%Y %I:%M:%S %p',
