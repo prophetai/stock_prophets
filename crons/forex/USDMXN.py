@@ -7,8 +7,10 @@ import pandas as pd
 import datetime
 import json
 import numpy as np
+import oandapy as opy
 import google.cloud.logging
-sys.path.insert(0, abspath(join(dirname(__file__), '..')))
+
+
 from utils.extract import db_connection, download_data
 # Instancia un cliente para el logger
 client = google.cloud.logging.Client()
@@ -16,6 +18,9 @@ client = google.cloud.logging.Client()
 # Connects the logger to the root logging handler; by default this captures
 # all logs at INFO level and higher
 client.setup_logging()
+
+#Inicializamos el api de Oanda
+oanda = opy.API(environment='live')
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
