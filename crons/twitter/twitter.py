@@ -2,7 +2,7 @@
 """
 Funciones para obtener los datos de twitter en la base de datos
 """
-import sys, opts
+import sys, getopt
 import json
 import pandas as pd
 import logging
@@ -104,13 +104,12 @@ def main(argv):
     """
     Corre la actualización de una lista de tweets
     """
-    opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
     #credenciales de db, twitter y emisoras
     try:
-      opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-   except getopt.GetoptError:
-      print 'twitter.py -i <inputfile> -o <outputfile>'
-      sys.exit(2)
+      opts, args = getopt.getopt(argv,"ha:c:",["accounts=","creds="])
+    except getopt.GetoptError:
+        print('twitter.py -a <ruta de archivo de cuentas> -c <ruta a creds>')
+        sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
@@ -124,12 +123,14 @@ def main(argv):
     try:
         with open(creds_file, encoding='utf-8') as data_file:
             creds = json.loads(data_file.read())
-    except Exception e:
+    except Exception as e:
         logging.error('No se encuentra el archivo de credenciales: {}'.format(creds_file))
+        sys.exit(2)
     try:
         lista_cuentas = pd.read_csv(inputfile)['Cuentas']
-    except Exception e:
-        logging.error('No se encuentra el archivo de cuentas: {}'.format(creds_file))
+    except Exception as e:
+        logging.error('No se encuentra el archivo de cuentas: {}'.format(inputfile))
+        sys.exit(2)
 
     try:
         for cuenta in lista_cuentas:
