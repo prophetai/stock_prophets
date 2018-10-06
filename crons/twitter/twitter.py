@@ -141,6 +141,7 @@ def main(argv):
         logging.error('Error al insertar en la base %s' % (e))
 
 if __name__ == "__main__":
+    main(sys.argv[1:])
     version = ".".join(str(v) for v in sys.version_info[:2])
     if float(version) < 3.6:
         print("[-] TWINT requires Python version 3.6+.")
