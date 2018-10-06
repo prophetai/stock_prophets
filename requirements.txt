@@ -1,0 +1,15 @@
+pandas==0.23.4
+pandas-datareader==0.7.0
+numpy==1.14.3
+psycopg2==2.7.5
+google-cloud-logging
+git+https://github.com/twintproject/twint.git
+aiohttp
+aiodns
+beautifulsoup4
+cchardet
+elasticsearch
+pysocks
+aiohttp_socks
+schedule
+git+https://github.com/oanda/oandapy.git
