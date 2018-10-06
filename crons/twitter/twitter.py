@@ -124,12 +124,12 @@ def main(argv):
         with open(creds_file, encoding='utf-8') as data_file:
             creds = json.loads(data_file.read())
     except Exception as e:
-        logging.error('No se encuentra el archivo de credenciales: {}'.format(creds_file))
+        logging.error('No se encuentra el archivo de credenciales: {}, {}'.format(creds_file,e))
         sys.exit(2)
     try:
         lista_cuentas = pd.read_csv(inputfile)['Cuentas']
     except Exception as e:
-        logging.error('No se encuentra el archivo de cuentas: {}'.format(inputfile))
+        logging.error('No se encuentra el archivo de cuentas: {} {}'.format(inputfile,e))
         sys.exit(2)
 
     try:
