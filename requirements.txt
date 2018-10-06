@@ -10,7 +10,6 @@ beautifulsoup4
 cchardet
 elasticsearch
 pysocks
-pandas
 aiohttp_socks
 schedule
 git+https://github.com/oanda/oandapy.git
