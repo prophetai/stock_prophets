@@ -26,7 +26,7 @@ logging.basicConfig(
 
 #client.setup_logging()
 
-def search_tweets(cuenta):
+def search_tweets(cuenta, debug=False):
     """
     Obtiene todos los tweets de una cuenta
 
@@ -40,13 +40,17 @@ def search_tweets(cuenta):
     c.Username = cuenta.replace('@','')
     c.Pandas = True
 
+    if debug:
+        c.Limit = 20
+        #cuando esté, hacer el cambio para que no se impriman los tweets
+
     try:
         twint.run.Search(c)
     except asyncio.TimeoutError as error:
         logging.error('Error en la búsqueda de tweets: %s' % (error))
 
     df = twint.storage.panda.Tweets_df
-
+    Pandas_clean = True
     return df
 
 def load_tweets(DF, creds):
@@ -57,21 +61,23 @@ def load_tweets(DF, creds):
         df(Dataframe): DataFrame con datos a subir a la base de datos
         creds(dict): Diccionario con las credenciales de la base de datos
     """
+    logging.info('*** Cargando tweets ***')
     df = DF.copy()
 
     new_order = ['id', 'user_id', 'date', 'timezone', 'location', 'username', 'tweet', 'hashtags', 'link', 'retweet', 'user_rt', 'mentions']
     df = df[new_order]
     df['hashtags'].replace('[','',inplace=True)
     df['hashtags'].replace(']','',inplace=True)
-    date_time = str(datetime.datetime.now())
 
     lista_tweets = df.values.tolist()
 
     data_ready = ''
-
     for i, tweet in enumerate(lista_tweets, start=0):
         tweet_str = []
-        for element in tweet:
+        cuenta = ''
+        for j, element in enumerate(tweet):
+            if j == 5:
+                cuenta = element
             element = str(element).replace("'", '')
             transform = "" + str(element).replace("['", '[').replace("']",']')
             tweet_str.append(transform)
@@ -85,7 +91,7 @@ def load_tweets(DF, creds):
                 conn = db_connection(creds)
                 download_data(conn, query)
                 data_ready = ''
-                logging.info("Se guardaron tweets ({}-{})".format(i-10000,len(lista_tweets)))
+                logging.info("Se guardaron tweets ({}-{}) de la cuenta {}".format(i-10000,len(lista_tweets), cuenta))
             except Exception as error:
                 logging.error("Error al tratar de insertar: %s" % (error))
         elif i == len(lista_tweets)-1 and data_ready != []:
@@ -98,13 +104,16 @@ def load_tweets(DF, creds):
             except Exception as error:
                 logging.error("Error al tratar de insertar: %s" % (error))
 
+    logging.info('Se terminan de guardar todos los tweets de {}'.format(cuenta))
+
 def main(argv):
     """
     Corre la actualización de una lista de tweets
     """
-    #credenciales de db, twitter y emisoras
+    debug = False
+    logging.info('Iniciando extracción de tweets')
     try:
-      opts, args = getopt.getopt(argv,"ha:c:",["accounts=","creds="])
+      opts, args = getopt.getopt(argv,"ha:c:d:",["accounts=","creds=","debug="])
     except getopt.GetoptError:
         print('twitter.py -a <ruta de archivo de cuentas> -c <ruta a creds>')
         sys.exit(2)
@@ -117,7 +126,8 @@ def main(argv):
             inputfile = arg
         elif opt in ("-c", "--creds"):
             creds_file = arg
-
+        elif opt in ("-d", "--debug"):
+            debug = True
     try:
         with open(creds_file, encoding='utf-8') as data_file:
             creds = json.loads(data_file.read())
@@ -130,12 +140,10 @@ def main(argv):
         logging.error('No se encuentra el archivo de cuentas: {} {}'.format(inputfile,e))
         sys.exit(2)
 
-    try:
-        for cuenta in lista_cuentas:
-            df = search_tweets(cuenta)
-            load_tweets(df, creds)
-    except Exception as e:
-        logging.error('Error al insertar en la base %s' % (e))
+    for cuenta in lista_cuentas:
+        df = search_tweets(cuenta, debug=debug)
+        load_tweets(df, creds)
+
 
 if __name__ == "__main__":
     version = ".".join(str(v) for v in sys.version_info[:2])
