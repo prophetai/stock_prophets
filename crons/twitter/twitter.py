@@ -80,7 +80,6 @@ def load_tweets(DF, creds):
 
         if i % 10000 == 0 and data_ready != [] and i > 0:
             try:
-                logging.info("Se llega a un número de tweet que es modulo 10K!!!!!!!!!!!!!")
                 data_ready = data_ready.replace(")(",'), (')
                 query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
                 conn = db_connection(creds)
@@ -91,7 +90,6 @@ def load_tweets(DF, creds):
                 logging.error("Error al tratar de insertar: %s" % (error))
         elif i == len(lista_tweets)-1 and data_ready != []:
             try:
-                logging.info("Se llega a un número de tweet que NO es modulo 10K!!!!!!!!!!!!!")
                 data_ready = data_ready.replace(")(",'), (')
                 query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
                 conn = db_connection(creds)
@@ -136,8 +134,6 @@ def main(argv):
         for cuenta in lista_cuentas:
             df = search_tweets(cuenta)
             load_tweets(df, creds)
-            twint.storage.panda.Tweets_df = ''
-            del df
     except Exception as e:
         logging.error('Error al insertar en la base %s' % (e))
 
