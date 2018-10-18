@@ -122,12 +122,12 @@ def main(argv):
     try:
       opts, args = getopt.getopt(argv,"ht:c:d:",["tickers=","creds=","debug="])
     except getopt.GetoptError:
-        print('tickers.py -a <ruta de archivo de cuentas> -c <ruta a creds>')
+        print('tickers.py -a <ruta de archivo de tickers> -c <ruta a creds>')
         sys.exit(2)
 
     for opt, arg in opts:
         if opt == '-h':
-            print('twitter.py -a <ruta de archivo de cuentas> -c <ruta a creds>')
+            print('tickers.py -t <ruta de archivo de tickers> -c <ruta a creds>')
             sys.exit()
         elif opt in ("-t", "--tickers"):
             inputfile = arg
