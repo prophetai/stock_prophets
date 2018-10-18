@@ -11,6 +11,7 @@ import datetime
 sys.path.insert(0, '..')
 from utils.extract import db_connection, download_data
 import google.cloud.logging
+from textblob import TextBlob
 
 # Instancia un cliente para el logger
 #client = google.cloud.logging.Client()
@@ -53,6 +54,13 @@ def search_tweets(cuenta, debug=False):
     Pandas_clean = True
     return df
 
+def get_sentiment(tweet):
+    text = TextBlob(tweet)
+    polarity = text.polarity
+    subjec = text.subjectivity
+
+    return text, polarity, subjec
+
 def load_tweets(DF, creds):
     """
     Carga los tweets desde un dataframe a una base de datos
@@ -78,10 +86,13 @@ def load_tweets(DF, creds):
         for j, element in enumerate(tweet):
             if j == 5:
                 cuenta = element
+            if j == 6:
+                sentiment = get_sentiment(element)
             element = str(element).replace("'", '')
             transform = "" + str(element).replace("['", '[').replace("']",']')
             tweet_str.append(transform)
-
+        tweet_str.append(cuenta[0])
+        tweet_str.append(cuenta[1])
         data_ready += "(" + str(tweet_str)[1:-1] + ")"
 
         if i % 10000 == 0 and data_ready != [] and i > 0:
