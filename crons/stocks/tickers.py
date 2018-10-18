@@ -10,28 +10,6 @@ import numpy as np
 import google.cloud.logging
 sys.path.insert(0, '..')
 from utils.extract import db_connection, download_data
-# Instancia un cliente para el logger
-client = google.cloud.logging.Client()
-
-# Connects the logger to the root logging handler; by default this captures
-# all logs at INFO level and higher
-client.setup_logging()
-
-logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%m/%d/%Y %I:%M:%S %p',
-    level=logging.DEBUG,
-    filename='log.txt'
-)
-
-lista_tickers = pd.read_csv('tickers.csv')[['Ticker']]
-
-with open('creds.txt', encoding='utf-8') as data_file:
-    creds = json.loads(data_file.read())
-
-now = datetime.datetime.now()
-
-
 
 def get_last_date(table_name, creds):
     """
@@ -135,5 +113,52 @@ def get_stock_data(lista_tickers, creds, previous_date=False):
         except Exception as error:
             logging.error("Error al tratar de obtener datos de %s: %s" % (ticker,error))
 
+def main(argv):
+    """
+    Corre la actualización de una lista de tweets
+    """
+    debug = False
+    logging.info('Iniciando extracción de tweets')
+    try:
+      opts, args = getopt.getopt(argv,"ht:c:d:",["tickers=","creds=","debug="])
+    except getopt.GetoptError:
+        print('tickers.py -a <ruta de archivo de cuentas> -c <ruta a creds>')
+        sys.exit(2)
 
-get_stock_data(lista_tickers,creds)
+    for opt, arg in opts:
+        if opt == '-h':
+            print('twitter.py -a <ruta de archivo de cuentas> -c <ruta a creds>')
+            sys.exit()
+        elif opt in ("-t", "--tickers"):
+            inputfile = arg
+        elif opt in ("-c", "--creds"):
+            creds_file = arg
+        elif opt in ("-d", "--debug"):
+            debug = True
+    try:
+        with open(creds_file, encoding='utf-8') as data_file:
+            creds = json.loads(data_file.read())
+    except Exception as e:
+        logging.error('No se encuentra el archivo de credenciales: {}, {}'.format(creds_file,e))
+        sys.exit(2)
+    try:
+        lista_tickers = pd.read_csv(inputfile)['Ticker']
+    except Exception as e:
+        logging.error('No se encuentra el archivo de cuentas: {} {}'.format(inputfile,e))
+        sys.exit(2)
+
+    now = datetime.datetime.now()
+    # Instancia un cliente para el logger
+    client = google.cloud.logging.Client()
+
+    # Connects the logger to the root logging handler; by default this captures
+    # all logs at INFO level and higher
+    client.setup_logging()
+
+    logging.basicConfig(
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logging.DEBUG
+    )
+
+    get_stock_data(lista_tickers,creds)
