@@ -61,7 +61,7 @@ def get_sentiment(tweet):
 
     return text, polarity, subjec
 
-def load_tweets(DF, creds):
+def load_tweets(DF, creds, debug=False):
     """
     Carga los tweets desde un dataframe a una base de datos
 
@@ -99,6 +99,8 @@ def load_tweets(DF, creds):
             try:
                 data_ready = data_ready.replace(")(",'), (')
                 query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
+                if debug:
+                    logging.info('query: {}'.format(query))
                 conn = db_connection(creds)
                 download_data(conn, query)
                 data_ready = ''
@@ -109,6 +111,8 @@ def load_tweets(DF, creds):
             try:
                 data_ready = data_ready.replace(")(",'), (')
                 query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
+                if debug:
+                    logging.info('query: {}'.format(query))
                 conn = db_connection(creds)
                 download_data(conn, query)
                 logging.info("Se guardaron los últimos tweets ({}-{})".format(i - len(lista_tweets) + 1,len(lista_tweets)))
