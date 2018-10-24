@@ -1,1 +1,1 @@
-# stock_prophets
+# Stock Prophets
