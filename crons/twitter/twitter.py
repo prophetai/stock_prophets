@@ -61,7 +61,7 @@ def get_sentiment(tweet):
 
     return text, polarity, subjec
 
-def load_tweets(DF, creds):
+def load_tweets(DF, creds, debug=False):
     """
     Carga los tweets desde un dataframe a una base de datos
 
@@ -91,14 +91,16 @@ def load_tweets(DF, creds):
             element = str(element).replace("'", '')
             transform = "" + str(element).replace("['", '[').replace("']",']')
             tweet_str.append(transform)
-        tweet_str.append(cuenta[0])
-        tweet_str.append(cuenta[1])
+        tweet_str.append(sentiment[1])
+        tweet_str.append(sentiment[2])
         data_ready += "(" + str(tweet_str)[1:-1] + ")"
 
         if i % 10000 == 0 and data_ready != [] and i > 0:
             try:
                 data_ready = data_ready.replace(")(",'), (')
-                query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
+                query = """INSERT INTO tweets (id, user_id , date , timezone , location , username , tweet , hashtags , link , retweet , user_rt , mentions, polarity , subjectivity ) VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
+                if debug:
+                    logging.error('query: {}'.format(query))
                 conn = db_connection(creds)
                 download_data(conn, query)
                 data_ready = ''
@@ -108,7 +110,9 @@ def load_tweets(DF, creds):
         elif i == len(lista_tweets)-1 and data_ready != []:
             try:
                 data_ready = data_ready.replace(")(",'), (')
-                query = """INSERT INTO tweets VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
+                query = """INSERT INTO tweets (id, user_id , date , timezone , location , username , tweet , hashtags , link , retweet , user_rt , mentions, polarity , subjectivity ) VALUES {} ON CONFLICT (id) DO NOTHING;""".format(data_ready)
+                if debug:
+                    logging.error('query: {}'.format(query))
                 conn = db_connection(creds)
                 download_data(conn, query)
                 logging.info("Se guardaron los últimos tweets ({}-{})".format(i - len(lista_tweets) + 1,len(lista_tweets)))
@@ -153,7 +157,7 @@ def main(argv):
 
     for cuenta in lista_cuentas:
         df = search_tweets(cuenta, debug=debug)
-        load_tweets(df, creds)
+        load_tweets(df, creds, debug=debug)
 
 
 if __name__ == "__main__":

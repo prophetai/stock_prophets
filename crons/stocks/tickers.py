@@ -1,5 +1,5 @@
 #-*- coding: utf-8 -*-
-import os, sys
+import os, sys, getopt
 from os.path import dirname, join, abspath
 import logging
 from pandas_datareader import data
@@ -10,6 +10,20 @@ import numpy as np
 import google.cloud.logging
 sys.path.insert(0, '..')
 from utils.extract import db_connection, download_data
+
+now = datetime.datetime.now()
+# Instancia un cliente para el logger
+client = google.cloud.logging.Client()
+
+# Connects the logger to the root logging handler; by default this captures
+# all logs at INFO level and higher
+client.setup_logging()
+
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%m/%d/%Y %I:%M:%S %p',
+    level=logging.DEBUG
+)
 
 def get_last_date(table_name, creds):
     """
@@ -97,7 +111,7 @@ def get_stock_data(lista_tickers, creds, previous_date=False):
         creds(dict): diccionario de credenciales de la base de datos
     """
     end_date = '{}-{}-{}'.format(now.year, now.month, now.day)
-    for ticker in lista_tickers['Ticker']:
+    for ticker in lista_tickers:
         if previous_date:
             start_date = get_last_date(ticker.replace('.','_').replace('-','_'), creds)
             logging.warning("start_date: %s end_date: %s" % (start_date, end_date))
@@ -115,10 +129,10 @@ def get_stock_data(lista_tickers, creds, previous_date=False):
 
 def main(argv):
     """
-    Corre la actualización de una lista de tweets
+    Corre la actualización de una lista de stocks
     """
     debug = False
-    logging.info('Iniciando extracción de tweets')
+    logging.info('Iniciando actualización de stocks')
     try:
       opts, args = getopt.getopt(argv,"ht:c:d:",["tickers=","creds=","debug="])
     except getopt.GetoptError:
@@ -147,18 +161,7 @@ def main(argv):
         logging.error('No se encuentra el archivo de cuentas: {} {}'.format(inputfile,e))
         sys.exit(2)
 
-    now = datetime.datetime.now()
-    # Instancia un cliente para el logger
-    client = google.cloud.logging.Client()
-
-    # Connects the logger to the root logging handler; by default this captures
-    # all logs at INFO level and higher
-    client.setup_logging()
-
-    logging.basicConfig(
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%m/%d/%Y %I:%M:%S %p',
-        level=logging.DEBUG
-    )
-
     get_stock_data(lista_tickers,creds)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
